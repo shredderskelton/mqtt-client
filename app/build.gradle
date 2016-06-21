@@ -4,17 +4,19 @@ ext.vMajor = 1
 ext.vMinor = 0
 ext.vBugfix = 0
 
+ext.releaseAlias=''
+ext.releasePwdKey=''
+ext.releasePwdStore=''
+
 apply plugin: 'android-apt'
+
+if (file("$rootDir/local.gradle").exists()) {
+    apply from: "$rootDir/local.gradle"
+}
 
 android {
     compileSdkVersion 23
     buildToolsVersion "23.0.3"
-
-    Properties properties = new Properties()
-    properties.load(project.rootProject.file('local.properties').newDataInputStream())
-    def aliasProp = properties.getProperty('release.alias')
-    def passwordKeyProp = properties.getProperty('release.keypassword')
-    def passwordStoreProp = properties.getProperty('release.storepassword')
 
     signingConfigs {
         debug {
@@ -25,9 +27,9 @@ android {
         }
         release {
             storeFile file("shredder.keystore")
-            keyAlias aliasProp
-            keyPassword passwordKeyProp
-            storePassword passwordStoreProp
+            keyAlias releaseAlias
+            keyPassword releasePwdKey
+            storePassword releasePwdStore
         }
     }
 

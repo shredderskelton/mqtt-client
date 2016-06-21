@@ -68,3 +68,4 @@ build/*
 #Build script - versioning
 versionTag
 buildNumber
+/local.gradle
