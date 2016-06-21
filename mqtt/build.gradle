@@ -1,0 +1,88 @@
+apply plugin: 'com.android.library'
+apply plugin: 'android-apt'
+
+ext.vMajor = 0
+ext.vMinor = 0
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'mqtt'
+
+    publishedGroupId = 'com.shredder'
+    libraryName = 'mqtt'
+    artifact = 'mqtt'
+
+    libraryDescription = 'A wrapper for the Android Paho MQTT implementation'
+
+    siteUrl = 'https://github.com/shredderskelton/mqtt-client'
+    gitUrl = 'https://github.com/shredderskelton/mqtt-client.git'
+
+    libraryVersion = computeVersionName()
+
+    developerId = 'shredder'
+    developerName = 'Nick Skelton'
+    developerEmail = 'shredder.apps@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
+
+android {
+    compileSdkVersion 23
+    buildToolsVersion "23.0.3"
+
+    defaultConfig {
+        minSdkVersion 15
+        targetSdkVersion 23
+        versionCode getBuildNumber()
+        versionName computeVersionName()
+    }
+    buildTypes {
+        release {
+            minifyEnabled false
+            proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+        }
+    }
+}
+
+dependencies {
+    compile 'com.android.support:appcompat-v7:23.4.0'
+    compile 'org.eclipse.paho:org.eclipse.paho.client.mqttv3:1.0.2'
+    compile fileTree(dir: 'libs', include: ['*.jar'])
+    provided "org.projectlombok:lombok:1.16.4"
+    apt "org.projectlombok:lombok:1.16.4"
+}
+
+def getBuildNumber() {
+    def versionCodeFile = file('buildNumber')
+    def versionCode = 9999
+
+    if (versionCodeFile.exists()) {
+        versionCode = versionCodeFile.getText().trim()
+    } else {
+        println "Could not read buildNumber file. Version is set to default 9999. If you are seeing this on the build server, make sure you are executing 'git rev-list --no-merges HEAD | wc -l>app/buildNumber' before running the gradle build."
+    }
+
+    return Integer.valueOf(versionCode)
+}
+
+def writeVersionTagFile(versionNameString) {
+    println sprintf("Writing versionName to versionTag file: versionName=%s", versionNameString)
+    def versionNameFile = file('versionTag')
+    if (!versionNameFile.exists()) {
+        versionNameFile.createNewFile()
+    }
+    versionNameFile.setText(versionNameString)
+}
+
+def computeVersionName() {
+    def fullVersionString = String.format('%d.%d.%d', vMajor, vMinor, getBuildNumber())
+    writeVersionTagFile(fullVersionString)
+    println "Full versionName is " + fullVersionString
+    return fullVersionString
+}
+
+// https://inthecheesefactory.com/blog/how-to-upload-library-to-jcenter-maven-central-as-dependency/en
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/installv1.gradle'
+apply from: 'https://raw.githubusercontent.com/nuuneoi/JCenter/master/bintrayv1.gradle'
