@@ -10,8 +10,9 @@ ext.releasePwdStore=''
 
 apply plugin: 'android-apt'
 
-if (file("$rootDir/local.gradle").exists()) {
-    apply from: "$rootDir/local.gradle"
+if(project.hasProperty("shredder.signing")
+        && new File(project.property("shredder.signing") + ".gradle").exists()) {
+    apply from: project.property("shredder.signing") + ".gradle";
 }
 
 android {
@@ -24,12 +25,6 @@ android {
             keyAlias 'followmedebug'
             keyPassword 'password'
             storePassword 'password'
-        }
-        release {
-            storeFile file("shredder.keystore")
-            keyAlias releaseAlias
-            keyPassword releasePwdKey
-            storePassword releasePwdStore
         }
     }
 
@@ -45,11 +40,6 @@ android {
         debug {
             debuggable true
             signingConfig signingConfigs.debug
-        }
-
-        release {
-            debuggable false
-            signingConfig signingConfigs.release
         }
     }
 }

@@ -4,10 +4,6 @@ apply plugin: 'android-apt'
 ext.vMajor = 0
 ext.vMinor = 0
 
-ext.releaseAlias=''
-ext.releasePwdKey=''
-ext.releasePwdStore=''
-
 ext {
     bintrayRepo = 'maven'
     bintrayName = 'mqtt'
@@ -32,9 +28,11 @@ ext {
     allLicenses = ["Apache-2.0"]
 }
 
-if (file("$rootDir/local.gradle").exists()) {
-    apply from: "$rootDir/local.gradle"
+if (project.hasProperty("shredder.signing")
+        && new File(project.property("shredder.signing") + ".gradle").exists()) {
+    apply from: project.property("shredder.signing") + ".gradle";
 }
+
 
 android {
     compileSdkVersion 23
@@ -46,12 +44,6 @@ android {
             keyAlias 'followmedebug'
             keyPassword 'password'
             storePassword 'password'
-        }
-        release {
-            storeFile file("shredder.keystore")
-            keyAlias releaseAlias
-            keyPassword releasePwdKey
-            storePassword releasePwdStore
         }
     }
 
@@ -66,11 +58,6 @@ android {
         debug {
             debuggable true
             signingConfig signingConfigs.debug
-        }
-
-        release {
-            debuggable false
-            signingConfig signingConfigs.release
         }
     }
 }
