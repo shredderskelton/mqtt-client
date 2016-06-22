@@ -4,10 +4,6 @@ ext.vMajor = 1
 ext.vMinor = 0
 ext.vBugfix = 0
 
-ext.releaseAlias=''
-ext.releasePwdKey=''
-ext.releasePwdStore=''
-
 apply plugin: 'android-apt'
 
 if(project.hasProperty("shredder.signing")

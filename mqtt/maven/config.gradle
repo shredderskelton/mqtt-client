@@ -1,0 +1,24 @@
+
+ext {
+    bintrayRepo = 'maven'
+    bintrayName = 'mqtt'
+
+    publishedGroupId = 'com.shredder'
+    libraryName = 'mqtt'
+    artifact = 'mqtt'
+
+    libraryDescription = 'A wrapper for the Android Paho MQTT implementation'
+
+    siteUrl = 'https://github.com/shredderskelton/mqtt-client'
+    gitUrl = 'https://github.com/shredderskelton/mqtt-client.git'
+
+    libraryVersion = computeVersionName()
+
+    developerId = 'shredder'
+    developerName = 'Nick Skelton'
+    developerEmail = 'shredder.apps@gmail.com'
+
+    licenseName = 'The Apache Software License, Version 2.0'
+    licenseUrl = 'http://www.apache.org/licenses/LICENSE-2.0.txt'
+    allLicenses = ["Apache-2.0"]
+}
