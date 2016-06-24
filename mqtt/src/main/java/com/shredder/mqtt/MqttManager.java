@@ -10,11 +10,15 @@ import org.eclipse.paho.client.mqttv3.MqttException;
 import org.eclipse.paho.client.mqttv3.MqttMessage;
 import org.eclipse.paho.client.mqttv3.persist.MemoryPersistence;
 
+import java.util.ArrayList;
+import java.util.List;
+
 public class MqttManager {
     private final String TAG = "MqttManager";
     protected final MqttManagerConfig configuration;
     protected MqttClient client;
     private final Listener listener;
+    private final List<String> subscriptions = new ArrayList<>();
 
     public MqttManager(MqttManagerConfig config, Listener listener) {
         this.configuration = config;
@@ -47,9 +51,12 @@ public class MqttManager {
     }
 
     public void publish(String message, String topic) {
+        publish(message, topic, false);
+    }
+
+    public void publish(String message, String topic, boolean retain) {
         connect();
         try {
-            boolean retain = false;
             Log.i(TAG, "publishing to " + topic + " with QOS: (" + configuration.getQualityOfService() + ") retaining: (" + (retain ? "yes" : "no") + ")");
             client.publish(topic, message.getBytes(), configuration.getQualityOfService().getValue(), retain);
         } catch (MqttException e) {
@@ -62,9 +69,28 @@ public class MqttManager {
         try {
             connect();
             client.subscribe(topic);
+            subscriptions.add(topic);
         } catch (MqttException e) {
             Log.e(TAG, "Exception while subscribing: " + e.getLocalizedMessage());
             e.printStackTrace();
+        }
+    }
+
+    public void destroy() {
+        try {
+            unsubscribeAll();
+            client.disconnect(1000);
+        } catch (MqttException e) {
+            Log.e(TAG, "Exception while disconnecting: " + e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+    }
+
+    public void unsubscribeAll() {
+        int maxLoops = subscriptions.size();
+        while (maxLoops > 0 && subscriptions.size() > 0) {
+            maxLoops--;
+            unsubscribe(subscriptions.get(0));
         }
     }
 
@@ -72,6 +98,7 @@ public class MqttManager {
         try {
             connect();
             client.unsubscribe(topic);
+            subscriptions.remove(topic);
         } catch (MqttException e) {
             Log.e(TAG, "Exception while subscribing: " + e.getLocalizedMessage());
             e.printStackTrace();
