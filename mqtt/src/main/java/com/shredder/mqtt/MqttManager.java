@@ -80,7 +80,8 @@ public class MqttManager {
         connectionOptions.setConnectionTimeout(30);
         try {
             client.connect(connectionOptions);
-            Log.v(TAG, "Connect succeeded. Resetting backoff period.");
+            Log.v(TAG, "Connect succeeded. Resetting backoff period and resubscribing.");
+            resubscribe();
             backoff = 0;
         } catch (MqttException e) {
             e.printStackTrace();
@@ -105,16 +106,24 @@ public class MqttManager {
     }
 
     public void subscribe(String topic) {
-        try {
-            client.subscribe(topic);
+        if (!subscriptions.contains(topic)) {
             subscriptions.add(topic);
-        } catch (MqttException e) {
-            Log.e(TAG, "Exception while subscribing: " + e.getLocalizedMessage());
-            e.printStackTrace();
+        }
+        resubscribe();
+    }
+
+    private synchronized void resubscribe() {
+        for (String topic : subscriptions) {
+            try {
+                client.subscribe(topic);
+            } catch (MqttException e) {
+                Log.e(TAG, "Exception while subscribing: " + e.getLocalizedMessage());
+                e.printStackTrace();
+            }
         }
     }
 
-    public void start(){
+    public void start() {
         isRunning = true;
         backoffConnect();
     }
