@@ -28,9 +28,11 @@ public class MqttPluginController {
 
     public void start() {
         EventBus.getDefault().register(this);
+        mqttClient.start();
     }
 
     public void stop() {
+        mqttClient.stop();
         EventBus.getDefault().unregister(this);
     }
 

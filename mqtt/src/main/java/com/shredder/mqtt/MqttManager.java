@@ -14,18 +14,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 public class MqttManager {
+    private static final int MAX_BACKOFF = 10000; //ten seconds
     private final String TAG = "MqttManager";
     protected final MqttManagerConfig configuration;
     protected MqttClient client;
     private final Listener listener;
     private final List<String> subscriptions = new ArrayList<>();
+    private boolean isConnecting = false;
+    private boolean isRunning = false;
+    private int backoff = 0;
 
     public MqttManager(MqttManagerConfig config, Listener listener) {
         this.configuration = config;
         this.listener = listener;
         try {
-            Log.e(TAG, "Unique Id: " + config.getUniqueId());
-            Log.e(TAG, "Host: " + config.getHost());
+            Log.d(TAG, "Unique Id: " + config.getUniqueId());
+            Log.d(TAG, "Host: " + config.getHost());
             client = new MqttClient(config.getHost(), config.getUniqueId(), new MemoryPersistence());
             client.setCallback(mqttCallback);
         } catch (MqttException e) {
@@ -34,7 +38,39 @@ public class MqttManager {
         }
     }
 
-    private void connect() {
+    private void backoffConnect() {
+        backoff++;
+        if (isConnecting) {
+            return;
+        }
+        new Thread(new Runnable() {
+            @Override
+            public void run() {
+                isConnecting = true;
+                try {
+                    long exponentialBackoff = 100 * (long) Math.exp(backoff);
+                    long backOffInMillis = Math.min(MAX_BACKOFF, exponentialBackoff);
+                    Log.v(TAG, "Backing off for " + backOffInMillis);
+                    Thread.sleep(backOffInMillis);
+                } catch (InterruptedException e) {
+                    exit(false);
+                }
+                if (!isRunning) {
+                    exit(false);
+                }
+                exit(true);
+            }
+
+            private void exit(boolean withConnect) {
+                isConnecting = false;
+                if (withConnect) {
+                    connect();
+                }
+            }
+        }).start();
+    }
+
+    private synchronized void connect() {
         if (client.isConnected()) {
             return;
         }
@@ -44,10 +80,14 @@ public class MqttManager {
         connectionOptions.setConnectionTimeout(30);
         try {
             client.connect(connectionOptions);
+            Log.v(TAG, "Connect succeeded. Resetting backoff period.");
+            backoff = 0;
         } catch (MqttException e) {
             e.printStackTrace();
             Log.e(TAG, "connect() error" + e.getLocalizedMessage());
+            backoffConnect();
         }
+
     }
 
     public void publish(String message, String topic) {
@@ -55,7 +95,6 @@ public class MqttManager {
     }
 
     public void publish(String message, String topic, boolean retain) {
-        connect();
         try {
             Log.i(TAG, "publishing to " + topic + " with QOS: (" + configuration.getQualityOfService() + ") retaining: (" + (retain ? "yes" : "no") + ")");
             client.publish(topic, message.getBytes(), configuration.getQualityOfService().getValue(), retain);
@@ -67,7 +106,6 @@ public class MqttManager {
 
     public void subscribe(String topic) {
         try {
-            connect();
             client.subscribe(topic);
             subscriptions.add(topic);
         } catch (MqttException e) {
@@ -76,8 +114,14 @@ public class MqttManager {
         }
     }
 
-    public void destroy() {
+    public void start(){
+        isRunning = true;
+        backoffConnect();
+    }
+
+    public void stop() {
         try {
+            isRunning = false;
             unsubscribeAll();
             client.disconnect(1000);
         } catch (MqttException e) {
@@ -96,7 +140,7 @@ public class MqttManager {
 
     public void unsubscribe(String topic) {
         try {
-            connect();
+            backoffConnect();
             client.unsubscribe(topic);
             subscriptions.remove(topic);
         } catch (MqttException e) {
@@ -110,7 +154,7 @@ public class MqttManager {
         @Override
         public void connectionLost(Throwable cause) {
             Log.i(TAG, "Connection Lost. Resetting: Reason: " + cause.getLocalizedMessage());
-            connect();
+            backoffConnect();
         }
 
         @Override
