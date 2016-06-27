@@ -105,6 +105,16 @@ public class MqttManager {
         }
     }
 
+    public void clearRetained(String topic){
+        try {
+            Log.i(TAG, "Clearing retained messages for " + topic);
+            client.publish(topic, new byte[0], configuration.getQualityOfService().getValue(), false);
+        } catch (MqttException e) {
+            Log.e(TAG, "Exception while publishing: " + e.getLocalizedMessage());
+            e.printStackTrace();
+        }
+    }
+
     public void subscribe(String topic) {
         if (!subscriptions.contains(topic)) {
             subscriptions.add(topic);
