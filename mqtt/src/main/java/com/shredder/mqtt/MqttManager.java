@@ -76,7 +76,7 @@ public class MqttManager {
         }
         MqttConnectOptions connectionOptions = new MqttConnectOptions();
         connectionOptions.setKeepAliveInterval(60 * 20);
-        connectionOptions.setCleanSession(false);
+        connectionOptions.setCleanSession(true);
         connectionOptions.setConnectionTimeout(30);
         try {
             client.connect(connectionOptions);
@@ -88,7 +88,6 @@ public class MqttManager {
             Log.e(TAG, "connect() error" + e.getLocalizedMessage());
             backoffConnect();
         }
-
     }
 
     public void publish(String message, String topic) {
