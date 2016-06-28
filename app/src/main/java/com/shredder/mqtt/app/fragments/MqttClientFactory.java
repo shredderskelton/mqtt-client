@@ -22,6 +22,16 @@ public class MqttClientFactory {
             public String getUniqueId() {
                 return preferences.getUniqueId();
             }
+
+            @Override
+            public String getUser() {
+                return null;
+            }
+
+            @Override
+            public String getPassword() {
+                return null;
+            }
         };
     }
 }
