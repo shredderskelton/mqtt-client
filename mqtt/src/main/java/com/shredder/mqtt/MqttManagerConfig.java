@@ -4,4 +4,6 @@ public interface MqttManagerConfig {
     String getHost();
     QualityOfService getQualityOfService();
     String getUniqueId();
+    String getUser();
+    String getPassword();
 }

@@ -1,5 +1,6 @@
 package com.shredder.mqtt;
 
+import android.support.annotation.NonNull;
 import android.util.Log;
 
 import org.eclipse.paho.client.mqttv3.IMqttDeliveryToken;
@@ -74,10 +75,7 @@ public class MqttManager {
         if (client.isConnected()) {
             return;
         }
-        MqttConnectOptions connectionOptions = new MqttConnectOptions();
-        connectionOptions.setKeepAliveInterval(60 * 20);
-        connectionOptions.setCleanSession(true);
-        connectionOptions.setConnectionTimeout(30);
+        MqttConnectOptions connectionOptions = createConnectionOptions();
         try {
             client.connect(connectionOptions);
             Log.v(TAG, "Connect succeeded. Resetting backoff period and resubscribing.");
@@ -88,6 +86,25 @@ public class MqttManager {
             Log.e(TAG, "connect() error" + e.getLocalizedMessage());
             backoffConnect();
         }
+    }
+
+    @NonNull
+    private MqttConnectOptions createConnectionOptions() {
+        MqttConnectOptions connectionOptions = new MqttConnectOptions();
+        connectionOptions.setKeepAliveInterval(60 * 20);
+        connectionOptions.setCleanSession(true);
+        connectionOptions.setConnectionTimeout(30);
+        if (!isNullOrEmpty(configuration.getUser())) {
+            connectionOptions.setUserName(configuration.getUser());
+        }
+        if (!isNullOrEmpty(configuration.getPassword())) {
+            connectionOptions.setPassword(configuration.getPassword().toCharArray());
+        }
+        return connectionOptions;
+    }
+
+    public static boolean isNullOrEmpty(String s) {
+        return s == null || s.length() == 0;
     }
 
     public void publish(String message, String topic) {
@@ -104,7 +121,7 @@ public class MqttManager {
         }
     }
 
-    public void clearRetained(String topic){
+    public void clearRetained(String topic) {
         try {
             Log.i(TAG, "Clearing retained messages for " + topic);
             client.publish(topic, new byte[0], configuration.getQualityOfService().getValue(), false);
