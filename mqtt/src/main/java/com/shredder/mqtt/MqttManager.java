@@ -41,7 +41,7 @@ public class MqttManager {
 
     private void backoffConnect() {
         backoff++;
-        if (isConnecting) {
+        if (isConnecting || !isRunning) {
             return;
         }
         new Thread(new Runnable() {
