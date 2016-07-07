@@ -63,6 +63,7 @@ Next create a MQTT Manager and subscribe to a topic:
                         // Do something with the message.
                     }
                 });
+           this.mqttManager.start(); // don't forget to start the manager
            this.mqttManager.subscribe("myinterestingtopic");
 
                 
@@ -74,6 +75,7 @@ or if you are only interested in publishing and not subscribing
 ```java
         
            this.mqttManager = new MqttManager(config, null);
+           this.mqttManager.start();
            
                 
 ```

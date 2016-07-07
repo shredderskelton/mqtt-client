@@ -2,6 +2,8 @@ package com.shredder.mqtt.app.plugin;
 
 import com.shredder.mqtt.MqttManager;
 import com.shredder.mqtt.MqttManagerConfig;
+import com.shredder.mqtt.MqttPublishMessage;
+import com.shredder.mqtt.MqttSubscriptionMessage;
 import com.shredder.mqtt.app.MqttSettingsPreferences;
 import com.shredder.mqtt.app.fragments.MqttClientFactory;
 
@@ -14,8 +16,8 @@ public class MqttPluginController {
     private MqttManager mqttClient;
     private MqttManager.Listener listener = new MqttManager.Listener() {
         @Override
-        public void onMessageReceived(String message, String topic) {
-            EventBus.getDefault().post(new MessageReceivedEvent(message, topic));
+        public void onMessageReceived(MqttSubscriptionMessage subscriptionMessage) {
+            EventBus.getDefault().post(new MessageReceivedEvent(subscriptionMessage.getMessage(), subscriptionMessage.getTopic()));
         }
     };
     private final MqttSettingsPreferences prefs;
@@ -38,7 +40,11 @@ public class MqttPluginController {
 
     @Subscribe(threadMode = ThreadMode.BACKGROUND)
     public void onPublish(PublishEvent event) {
-        mqttClient.publish(event.getMessage(), event.getTopic());
+        MqttPublishMessage message = MqttPublishMessage.builder()
+                .message(event.getMessage())
+                .topic(event.getTopic())
+                .build();
+        mqttClient.publish(message);
     }
 
     @Subscribe(threadMode = ThreadMode.BACKGROUND)

@@ -17,8 +17,8 @@ import java.util.List;
 public class MqttManager {
     private static final int MAX_BACKOFF = 10000; //ten seconds
     private final String TAG = "MqttManager";
-    protected final MqttManagerConfig configuration;
-    protected MqttClient client;
+    private final MqttManagerConfig configuration;
+    private MqttClient client;
     private final Listener listener;
     private final List<String> subscriptions = new ArrayList<>();
     private boolean isConnecting = false;
@@ -103,18 +103,15 @@ public class MqttManager {
         return connectionOptions;
     }
 
-    public static boolean isNullOrEmpty(String s) {
+    private static boolean isNullOrEmpty(String s) {
         return s == null || s.length() == 0;
     }
 
-    public void publish(String message, String topic) {
-        publish(message, topic, false);
-    }
-
-    public void publish(String message, String topic, boolean retain) {
+    public void publish(MqttPublishMessage messageDetails) {
+        QualityOfService qos = messageDetails.getQualityOfService() == null ? configuration.getQualityOfService() : messageDetails.getQualityOfService();
         try {
-            Log.i(TAG, "publishing to " + topic + " with QOS: (" + configuration.getQualityOfService() + ") retaining: (" + (retain ? "yes" : "no") + ")");
-            client.publish(topic, message.getBytes(), configuration.getQualityOfService().getValue(), retain);
+            Log.i(TAG, "publishing to " + messageDetails.getTopic() + " with QOS: (" + qos + ") retaining: (" + (messageDetails.isRetain() ? "yes" : "no") + ")");
+            client.publish(messageDetails.getTopic(), messageDetails.getMessage().getBytes(), qos.getValue(), messageDetails.isRetain());
         } catch (MqttException e) {
             Log.e(TAG, "Exception while publishing: " + e.getLocalizedMessage());
             e.printStackTrace();
@@ -184,7 +181,7 @@ public class MqttManager {
         }
     }
 
-    private MqttCallback mqttCallback = new MqttCallback() {
+    private final MqttCallback mqttCallback = new MqttCallback() {
 
         @Override
         public void connectionLost(Throwable cause) {
@@ -208,14 +205,19 @@ public class MqttManager {
         }
     };
 
-    protected void messageReceived(String message, String topic) {
+    private void messageReceived(String message, String topic) {
         Log.i(TAG, "Message rx'd: " + topic + ":" + message);
-        if (listener != null) {
-            listener.onMessageReceived(message, topic);
+        if (listener == null) {
+            return;
         }
+        MqttSubscriptionMessage subscriptionMessage = MqttSubscriptionMessage.builder()
+                .message(message)
+                .topic(topic)
+                .build();
+        listener.onMessageReceived(subscriptionMessage);
     }
 
     public interface Listener {
-        void onMessageReceived(String message, String topic);
+        void onMessageReceived(MqttSubscriptionMessage subscriptionMessage);
     }
 }
